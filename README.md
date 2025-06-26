@@ -1,6 +1,7 @@
 # Driver AI
 
 Driver AI is a tool for automating and controlling a macOS computer using AI.
+<img width="1512" alt="Screenshot 2025-06-26 at 1 38 09 PM" src="https://github.com/user-attachments/assets/0f49e9c5-5778-4b5d-be43-1a28aa3328e1" />
 
 ## Getting Started
 
