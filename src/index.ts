@@ -6,7 +6,7 @@ import { setupIpcHandlers } from "./ipc-handlers";
 import dotenv from "dotenv";
 dotenv.config();
 
-const HIDE_MENU_BAR = true;
+const HIDE_MENU_BAR = false;
 const HIDE_WINDOW = true;
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;

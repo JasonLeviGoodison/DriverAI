@@ -10,6 +10,11 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 import { mainConfig } from "./webpack.main.config";
 import { rendererConfig } from "./webpack.renderer.config";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const { APPLE_ID = "", APPLE_ID_PASSWORD = "", TEAM_ID = "" } = process.env;
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -17,11 +22,29 @@ const config: ForgeConfig = {
       unpack: "node_modules/robotjs/**/*",
     },
     extraResource: ["subprocess/", "subprocess/mac_subprocess"],
+    icon: "src/assets/icons/icon",
+    appBundleId: "com.driverai.ai",
+    osxSign: {
+      optionsForFile: (filePath) => {
+        return {
+          entitlements: "./subprocess/entitlements.plist", // Check if this is the right path
+          hardenedRuntime: true,
+          gatekeeperAssess: false,
+        };
+      },
+      identity: "Developer ID Application: Setanta AI", // TODO: change this to the correct identity
+    },
+
+    osxNotarize: {
+      appleId: APPLE_ID,
+      appleIdPassword: APPLE_ID_PASSWORD,
+      teamId: TEAM_ID,
+    },
   },
   rebuildConfig: {
     force: true,
   },
-  makers: [new MakerSquirrel({}), new MakerZIP({}, ["darwin"]), new MakerRpm({}), new MakerDeb({})],
+  makers: [new MakerSquirrel({}), new MakerZIP({}, ["darwin"])],
   plugins: [
     new AutoUnpackNativesPlugin({
       modules: ["robotjs"],
@@ -53,6 +76,19 @@ const config: ForgeConfig = {
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: false,
     }),
+  ],
+  publishers: [
+    {
+      name: "@electron-forge/publisher-github",
+      config: {
+        repository: {
+          owner: "JasonLeviGoodison",
+          name: "DriverAI",
+        },
+        prerelease: false,
+        draft: true,
+      },
+    },
   ],
 };
 
