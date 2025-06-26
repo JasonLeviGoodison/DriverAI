@@ -1,8 +1,8 @@
 {
-  "name": "my-new-app",
-  "productName": "my-new-app",
-  "version": "1.0.0",
-  "description": "My Electron application description",
+  "name": "driver-ai",
+  "productName": "Driver AI",
+  "version": "0.0.1",
+  "description": "Driver AI is a tool for automating and controlling a macOS computer using AI.",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
