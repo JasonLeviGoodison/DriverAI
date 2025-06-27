@@ -1,18 +1,52 @@
-import { app, BrowserWindow, screen, desktopCapturer } from "electron";
+import { app, BrowserWindow } from "electron";
 import { MacOSComputer } from "./macos-computer";
-import { AgentMessage, ConversationRole } from "./types";
+import { AgentMessage } from "./types";
 import { Agent } from "./agent";
 import { setupIpcHandlers } from "./ipc-handlers";
+import { createAppWindow, showWindow } from "../node-src/WindowService";
+import { checkScreenRecordingPermissions } from "../node-src/PermissionService";
+import authService from "../node-src/AuthService";
+import log from "electron-log";
 import dotenv from "dotenv";
 dotenv.config();
 
-const HIDE_MENU_BAR = true;
-const HIDE_WINDOW = true;
-
-declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
-declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
-
 if (require("electron-squirrel-startup")) {
+  app.quit();
+}
+
+// Detect if app is packaged (production) or running in development
+const isPackaged = app.isPackaged;
+log.info(`App running in ${isPackaged ? "packaged" : "development"} mode`);
+
+// Only register custom protocol if packaged
+if (isPackaged) {
+  app.setAsDefaultProtocolClient("maccomputeruse");
+}
+
+// Handle protocol URLs (for authentication callback) - only in packaged mode
+app.on("open-url", async (event, url) => {
+  if (!isPackaged) {
+    log.info("Ignoring protocol URL in development mode");
+    return;
+  }
+
+  event.preventDefault();
+  log.info("Received protocol URL:", url);
+
+  if (url.startsWith("maccomputeruse://callback")) {
+    try {
+      await authService.loadTokens(url);
+      log.info("Authentication successful via protocol handler");
+      createAppWindow();
+    } catch (error) {
+      log.error("Authentication failed via protocol handler:", error);
+    }
+  }
+});
+
+const isFirstInstance = app.requestSingleInstanceLock();
+
+if (!isFirstInstance) {
   app.quit();
 }
 
@@ -20,82 +54,6 @@ let mainWindow: BrowserWindow | null = null;
 let computer: MacOSComputer | null = null;
 let agent: Agent | null = null;
 let conversationItems: AgentMessage[] = [];
-
-function setWindowAlwaysOnTopAllDesktops(win: BrowserWindow | null) {
-  if (!win) return;
-  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  win.setAlwaysOnTop(true, "screen-saver");
-}
-
-// Function to check and request screen recording permissions
-async function checkScreenRecordingPermissions(): Promise<boolean> {
-  try {
-    console.log("🔐 Checking screen recording permissions...");
-
-    // Try to get screen sources - this will trigger permission prompt if needed
-    const sources = await desktopCapturer.getSources({
-      types: ["screen"],
-      thumbnailSize: { width: 1, height: 1 }, // Minimal size for permission check
-    });
-
-    if (sources.length > 0) {
-      console.log("✅ Screen recording permissions granted");
-      return true;
-    } else {
-      console.log("❌ No screen sources available - permissions may be denied");
-      return false;
-    }
-  } catch (error) {
-    console.log("❌ Screen recording permission check failed:", error);
-    return false;
-  }
-}
-
-const createWindow = (): void => {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.size;
-  const windowWidth = 400;
-  const windowHeight = screenHeight;
-  const windowX = screenWidth - windowWidth;
-  const windowY = 0;
-
-  mainWindow = new BrowserWindow({
-    width: windowWidth,
-    height: windowHeight,
-    x: windowX,
-    y: windowY,
-    webPreferences: {
-      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
-      nodeIntegration: false,
-      contextIsolation: true,
-      webSecurity: false,
-      devTools: !HIDE_MENU_BAR,
-    },
-    transparent: true,
-    titleBarStyle: "hidden",
-    trafficLightPosition: { x: 10, y: 6 },
-    resizable: true,
-    alwaysOnTop: true,
-    type: "normal",
-    hasShadow: false,
-    frame: true,
-    //autoHideMenuBar: true,
-  });
-
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-  mainWindow.setContentProtection(HIDE_WINDOW);
-
-  setWindowAlwaysOnTopAllDesktops(mainWindow);
-
-  mainWindow.webContents.openDevTools();
-
-  mainWindow.on("show", () => setWindowAlwaysOnTopAllDesktops(mainWindow));
-  mainWindow.on("focus", () => setWindowAlwaysOnTopAllDesktops(mainWindow));
-  mainWindow.on("blur", () => setWindowAlwaysOnTopAllDesktops(mainWindow));
-  mainWindow.on("enter-full-screen", () => setWindowAlwaysOnTopAllDesktops(mainWindow));
-  mainWindow.on("leave-full-screen", () => setWindowAlwaysOnTopAllDesktops(mainWindow));
-};
 
 const acknowledgeSafetyCheckCallback = (message: string): boolean => {
   console.log(`Safety check auto-acknowledged: ${message}`);
@@ -123,13 +81,15 @@ setupIpcHandlers({
 });
 
 app.on("ready", async () => {
-  createWindow();
+  // createWindow(mainWindow);
+
+  showWindow();
 
   // Check screen recording permissions on startup
   // This will trigger the permission dialog if permissions haven't been granted
   setTimeout(async () => {
     await checkScreenRecordingPermissions();
-  }, 1000); // Small delay to ensure window is fully loaded
+  }, 1000);
 });
 
 app.on("window-all-closed", () => {
@@ -140,8 +100,6 @@ app.on("window-all-closed", () => {
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  } else if (mainWindow) {
-    setWindowAlwaysOnTopAllDesktops(mainWindow);
+    //createAppWindow();
   }
 });

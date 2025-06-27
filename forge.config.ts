@@ -24,6 +24,12 @@ const config: ForgeConfig = {
     extraResource: ["subprocess/", "subprocess/mac_subprocess"],
     icon: "src/assets/icons/icon",
     appBundleId: "com.driverai.ai",
+    protocols: [
+      {
+        name: "Mac Computer Use Auth",
+        schemes: ["maccomputeruse"],
+      },
+    ],
     osxSign: {
       optionsForFile: (filePath) => {
         return {
