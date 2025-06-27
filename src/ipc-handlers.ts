@@ -120,28 +120,29 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
             required: ["app_name"],
           },
         },
-        {
-          type: "function",
-          name: "open_application",
-          description: "Open/launch an application by name.",
-          parameters: {
-            type: "object",
-            properties: {
-              app_name: {
-                type: "string",
-                description: "Name of the application to open",
-              },
-            },
-            additionalProperties: false,
-            required: ["app_name"],
-          },
-        },
-        {
-          type: "function",
-          name: "get_active_application",
-          description: "Get the name of the currently active/focused application.",
-          parameters: {},
-        },
+        // TODO REMOVE FOR NOW, I THINK WE BROKE SOMETHING IN THE SUBPROCESS
+        // {
+        //   type: "function",
+        //   name: "open_application",
+        //   description: "Open/launch an application by name.",
+        //   parameters: {
+        //     type: "object",
+        //     properties: {
+        //       app_name: {
+        //         type: "string",
+        //         description: "Name of the application to open",
+        //       },
+        //     },
+        //     additionalProperties: false,
+        //     required: ["app_name"],
+        //   },
+        // },
+        // {
+        //   type: "function",
+        //   name: "get_active_application",
+        //   description: "Get the name of the currently active/focused application.",
+        //   parameters: {},
+        // },
       ];
 
       const agent = new Agent({
@@ -293,6 +294,26 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       console.warn("Error checking accessibility permissions:", errorMessage);
+      return false;
+    }
+  });
+
+  ipcMain.handle("check-screen-recording-permissions", async () => {
+    try {
+      console.log("📡 IPC: check-screen-recording-permissions called");
+
+      const { desktopCapturer } = require("electron");
+      const sources = await desktopCapturer.getSources({
+        types: ["screen"],
+        thumbnailSize: { width: 1, height: 1 }, // Minimal size for permission check
+      });
+
+      const hasPermissions = sources.length > 0;
+      console.log("📡 IPC: Screen recording permissions:", hasPermissions);
+      return hasPermissions;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.warn("📡 IPC: Error checking screen recording permissions:", errorMessage);
       return false;
     }
   });

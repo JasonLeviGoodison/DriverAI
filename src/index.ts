@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen } from "electron";
+import { app, BrowserWindow, screen, desktopCapturer } from "electron";
 import { MacOSComputer } from "./macos-computer";
 import { AgentMessage, ConversationRole } from "./types";
 import { Agent } from "./agent";
@@ -25,6 +25,30 @@ function setWindowAlwaysOnTopAllDesktops(win: BrowserWindow | null) {
   if (!win) return;
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setAlwaysOnTop(true, "screen-saver");
+}
+
+// Function to check and request screen recording permissions
+async function checkScreenRecordingPermissions(): Promise<boolean> {
+  try {
+    console.log("🔐 Checking screen recording permissions...");
+
+    // Try to get screen sources - this will trigger permission prompt if needed
+    const sources = await desktopCapturer.getSources({
+      types: ["screen"],
+      thumbnailSize: { width: 1, height: 1 }, // Minimal size for permission check
+    });
+
+    if (sources.length > 0) {
+      console.log("✅ Screen recording permissions granted");
+      return true;
+    } else {
+      console.log("❌ No screen sources available - permissions may be denied");
+      return false;
+    }
+  } catch (error) {
+    console.log("❌ Screen recording permission check failed:", error);
+    return false;
+  }
 }
 
 const createWindow = (): void => {
@@ -98,7 +122,15 @@ setupIpcHandlers({
   acknowledgeSafetyCheckCallback,
 });
 
-app.on("ready", createWindow);
+app.on("ready", async () => {
+  createWindow();
+
+  // Check screen recording permissions on startup
+  // This will trigger the permission dialog if permissions haven't been granted
+  setTimeout(async () => {
+    await checkScreenRecordingPermissions();
+  }, 1000); // Small delay to ensure window is fully loaded
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

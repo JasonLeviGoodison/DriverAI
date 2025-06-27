@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   startScreenLock: () => ipcRenderer.invoke("start-screen-lock"),
   stopScreenLock: () => ipcRenderer.invoke("stop-screen-lock"),
   checkAccessibilityPermissions: () => ipcRenderer.invoke("check-accessibility-permissions"),
+  checkScreenRecordingPermissions: () => ipcRenderer.invoke("check-screen-recording-permissions"),
 
   // Window expansion controls
   expandWindow: () => ipcRenderer.invoke("expand-window"),
@@ -92,6 +93,7 @@ declare global {
       startScreenLock: () => Promise<boolean>;
       stopScreenLock: () => Promise<boolean>;
       checkAccessibilityPermissions: () => Promise<boolean>;
+      checkScreenRecordingPermissions: () => Promise<boolean>;
       expandWindow: () => Promise<void>;
       contractWindow: () => Promise<void>;
       registerKeyboardShortcut: (accelerator: string, action: string) => Promise<boolean>;
