@@ -24,11 +24,30 @@ export const KeyboardProvider: React.FC<KeyboardProviderProps> = ({ children }) 
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
   const toggleSidebar = () => {
-    setIsSidebarVisible(!isSidebarVisible);
+    const newVisibility = !isSidebarVisible;
+    setIsSidebarVisible(newVisibility);
+
+    // Show/hide window buttons based on sidebar visibility
+    if (window.electronAPI) {
+      if (newVisibility) {
+        window.electronAPI.showWindowButtons();
+      } else {
+        window.electronAPI.hideWindowButtons();
+      }
+    }
   };
 
   const setSidebarVisible = (visible: boolean) => {
     setIsSidebarVisible(visible);
+
+    // Show/hide window buttons based on sidebar visibility
+    if (window.electronAPI) {
+      if (visible) {
+        window.electronAPI.showWindowButtons();
+      } else {
+        window.electronAPI.hideWindowButtons();
+      }
+    }
   };
 
   // Register global keyboard shortcuts

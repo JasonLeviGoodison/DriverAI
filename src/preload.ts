@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   minimizeWindow: () => ipcRenderer.invoke("minimize-window"),
   toggleMaximizeWindow: () => ipcRenderer.invoke("toggle-maximize-window"),
   closeWindow: () => ipcRenderer.invoke("close-window"),
+  hideWindowButtons: () => ipcRenderer.invoke("hide-window-buttons"),
+  showWindowButtons: () => ipcRenderer.invoke("show-window-buttons"),
 
   // Click-through controls
   enableClickThrough: () => ipcRenderer.invoke("enable-click-through"),
@@ -94,6 +96,8 @@ declare global {
       minimizeWindow: () => Promise<void>;
       toggleMaximizeWindow: () => Promise<void>;
       closeWindow: () => Promise<void>;
+      hideWindowButtons: () => Promise<void>;
+      showWindowButtons: () => Promise<void>;
       enableClickThrough: () => Promise<void>;
       disableClickThrough: () => Promise<void>;
       startScreenLock: () => Promise<boolean>;

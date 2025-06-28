@@ -413,6 +413,21 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
     }
   });
 
+  // Window button visibility handlers
+  ipcMain.handle("hide-window-buttons", async () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      mainWindow.setWindowButtonVisibility(false);
+    }
+  });
+
+  ipcMain.handle("show-window-buttons", async () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      mainWindow.setWindowButtonVisibility(true);
+    }
+  });
+
   // Auth
   ipcMain.handle("auth:get-token", async () => {
     const token = await authService.getAccessToken();
