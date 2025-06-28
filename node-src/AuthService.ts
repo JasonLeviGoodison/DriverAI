@@ -61,8 +61,15 @@ class AuthService {
       this.profile = jwtDecode(response.data.id_token);
       this.refreshToken = response.data.refresh_token;
 
+      console.log("loadTokens: Access token:", this.accessToken);
+      console.log("loadTokens: Refresh token:", this.refreshToken);
+      console.log("loadTokens: Profile:", this.profile);
+
       if (this.refreshToken) {
         await storeToken("refresh", this.refreshToken);
+      }
+      if (this.accessToken) {
+        await storeToken("access", this.accessToken);
       }
     } catch (error) {
       await this.logout();
@@ -101,6 +108,10 @@ class AuthService {
 
   public getLogOutUrl(): string {
     return `https://${AUTH0_DOMAIN}/v2/logout`;
+  }
+
+  public getAccessToken(): string | null {
+    return this.accessToken;
   }
 
   public getProfile(): any {

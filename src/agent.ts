@@ -1,7 +1,8 @@
 import { Computer } from "./computer";
-import { createResponse, AIProvider } from "./ai";
 import { checkBlocklistedUrl } from "./utils";
 import { AgentMessage, ConversationRole, ComputerTool } from "./types";
+import { AIProvider } from "./requests/types";
+import { createResponse } from "./ai/llm";
 
 export type SafetyCheckCallback = (message: string) => boolean;
 export type MessageStreamCallback = (message: AgentMessage) => void;
@@ -80,10 +81,18 @@ Prefer keyboard shortcuts over mouse clicks when possible:
 - Command + Shift + Command + T: Add to Dock
 - Command + F: Find
 
+
+
+### System settings App (shortcuts)
+When you have the system settings app open, you can use the following shortcuts:
+- ArrowUp or ArrowDown keys will navigate through the menu items.
+  - Example: If you are on "Network", then pressing "ArrowDown" should bring you to "Battery", since it is underneath
+- This is not a recommendation, but a requirement. If you try to click through the menu instead of using the arrow keys, my grandmother will die.
+
 ### Important Shortcut information
 - Never use Command +M to minimize a window. This is because you will accidentally minimize an app that you cannot see and it will break our application.
 - If you decide that you want to do something that will take a lot of clicks, but is easy to do over the command line, you can simply open a new Terminal and do it there.
-
+- You can only specify one "down" or "up" keypress at a time. Do not say "down down down", instead say "ArrowDown" once, and do that 3 times if you must.
 
 ### Terminal
 - You can open the terminal to do organization and creation tasks.
@@ -593,7 +602,8 @@ export class Agent {
         };
         const messagesWithSystem = [systemMessage, ...inputItems, ...newItems];
 
-        // Call model
+        // Call model using createResponse from @llm.ts
+        console.log("Calling model with model:", this.model);
         const response = await createResponse({
           model: this.model,
           input: messagesWithSystem,
@@ -638,7 +648,12 @@ export class Agent {
       // Handle abort errors gracefully
       if (
         error instanceof Error &&
-        (error.message === "Request aborted" || error.name === "AbortError")
+        (error.message === "Request aborted" ||
+          error.name === "AbortError" ||
+          error.message === "canceled" ||
+          error.name === "CanceledError" ||
+          error.name === "CancelledError" ||
+          (error as any).code === "ERR_CANCELED")
       ) {
         console.log("[Agent] Agent execution was stopped by user");
         // Add a message to indicate the agent was stopped

@@ -3,7 +3,7 @@ import { Settings, Minus, Square, X } from "lucide-react";
 import { useAgent } from "../contexts/AgentContext";
 import { useScreen } from "../contexts/ScreenContext";
 import { useKeyboard } from "../contexts/KeyboardContext";
-import { AIProvider } from "../ai";
+import { AIProvider } from "../requests/types";
 
 const Header: React.FC = () => {
   const { isAgentRunning, currentProvider, setCurrentProvider } = useAgent();

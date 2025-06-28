@@ -11,7 +11,7 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 let win: BrowserWindow | null = null;
 
-const createAppWindow = (): void => {
+const createAppWindow = (): BrowserWindow => {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenWidth, height: screenHeight } = primaryDisplay.size;
   const windowWidth = 400;
@@ -56,6 +56,8 @@ const createAppWindow = (): void => {
   mainWindow.on("enter-full-screen", () => setWindowAlwaysOnTopAllDesktops(mainWindow));
   mainWindow.on("leave-full-screen", () => setWindowAlwaysOnTopAllDesktops(mainWindow));
   win = mainWindow;
+
+  return mainWindow;
 };
 
 function setWindowAlwaysOnTopAllDesktops(win: BrowserWindow | null) {
@@ -64,13 +66,15 @@ function setWindowAlwaysOnTopAllDesktops(win: BrowserWindow | null) {
   win.setAlwaysOnTop(true, "screen-saver");
 }
 
-async function showWindow(): Promise<void> {
+async function showWindow(): Promise<BrowserWindow | null> {
   // Which window to show based on wether valid refresh token exists
   try {
     await authService.refreshTokens();
-    createAppWindow();
+    console.log("showWindow: Authentication successful, creating app window");
+    return createAppWindow();
   } catch (err) {
     createAuthWindow();
+    return null;
   }
 }
 
@@ -91,6 +95,9 @@ function createAuthWindow(): void {
   win = new BrowserWindow({
     width: 1000,
     height: 900,
+    show: false,
+    transparent: true,
+    backgroundColor: "transparent",
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,
@@ -99,6 +106,13 @@ function createAuthWindow(): void {
   });
 
   win.loadURL(authService.getAuthenticationURL());
+
+  // Show window after content is loaded to prevent white flash
+  win.once("ready-to-show", () => {
+    if (win) {
+      win.show();
+    }
+  });
 
   const filters = {
     urls: ["http://localhost/callback*"],

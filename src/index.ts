@@ -2,7 +2,7 @@ import { app, BrowserWindow } from "electron";
 import { MacOSComputer } from "./macos-computer";
 import { AgentMessage } from "./types";
 import { Agent } from "./agent";
-import { setupIpcHandlers } from "./ipc-handlers";
+import { setupIpcHandlers } from "../node-src/IPCHandlers";
 import { createAppWindow, showWindow } from "../node-src/WindowService";
 import { checkScreenRecordingPermissions } from "../node-src/PermissionService";
 import authService from "../node-src/AuthService";
@@ -13,6 +13,11 @@ dotenv.config();
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
+
+let mainWindow: BrowserWindow | null = null;
+let computer: MacOSComputer | null = null;
+let agent: Agent | null = null;
+let conversationItems: AgentMessage[] = [];
 
 // Detect if app is packaged (production) or running in development
 const isPackaged = app.isPackaged;
@@ -37,7 +42,8 @@ app.on("open-url", async (event, url) => {
     try {
       await authService.loadTokens(url);
       log.info("Authentication successful via protocol handler");
-      createAppWindow();
+      const appWindow = createAppWindow();
+      mainWindow = appWindow;
     } catch (error) {
       log.error("Authentication failed via protocol handler:", error);
     }
@@ -49,11 +55,6 @@ const isFirstInstance = app.requestSingleInstanceLock();
 if (!isFirstInstance) {
   app.quit();
 }
-
-let mainWindow: BrowserWindow | null = null;
-let computer: MacOSComputer | null = null;
-let agent: Agent | null = null;
-let conversationItems: AgentMessage[] = [];
 
 const acknowledgeSafetyCheckCallback = (message: string): boolean => {
   console.log(`Safety check auto-acknowledged: ${message}`);
@@ -83,7 +84,10 @@ setupIpcHandlers({
 app.on("ready", async () => {
   // createWindow(mainWindow);
 
-  showWindow();
+  const createdWindow = await showWindow();
+  if (createdWindow) {
+    mainWindow = createdWindow;
+  }
 
   // Check screen recording permissions on startup
   // This will trigger the permission dialog if permissions haven't been granted

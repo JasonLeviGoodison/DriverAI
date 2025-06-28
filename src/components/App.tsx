@@ -8,6 +8,7 @@ import Sidebar from "./Sidebar";
 import SidebarToggle from "./SidebarToggle";
 import TransparentPane from "./TransparentPane";
 import ScreenLock from "./ScreenLock";
+import { AuthProvider } from "../contexts/AuthContext";
 
 const AppContent: React.FC = () => {
   const {
@@ -178,13 +179,15 @@ const App: React.FC = () => {
   };
 
   return (
-    <ScreenProvider>
-      <KeyboardProvider>
-        <AgentProvider onAgentMessage={handleAgentMessage}>
-          <AppContent />
-        </AgentProvider>
-      </KeyboardProvider>
-    </ScreenProvider>
+    <AuthProvider>
+      <ScreenProvider>
+        <KeyboardProvider>
+          <AgentProvider onAgentMessage={handleAgentMessage}>
+            <AppContent />
+          </AgentProvider>
+        </KeyboardProvider>
+      </ScreenProvider>
+    </AuthProvider>
   );
 };
 

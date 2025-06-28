@@ -5,6 +5,7 @@ import log from "electron-log";
 
 const userDataPath = app.getPath("userData");
 const tokenPath = path.join(userDataPath, "token.json");
+console.log("tokenPath:", tokenPath);
 
 // Ensure token.json exists, if not, create it as an empty object
 async function ensureTokenFileExists() {
