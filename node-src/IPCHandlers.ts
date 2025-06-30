@@ -1,8 +1,9 @@
 import { ipcMain, BrowserWindow, globalShortcut } from "electron";
-import { MacOSComputer } from "./macos-computer";
-import { AgentMessage, ConversationRole } from "./types";
-import { Agent } from "./agent";
-import { AIProvider } from "./ai";
+import { MacOSComputer } from "../src/macos-computer";
+import { AgentMessage, ConversationRole } from "../src/types";
+import { Agent } from "../src/agent";
+import { AIProvider } from "../src/requests/types";
+import authService from "./AuthService";
 
 interface IpcHandlerDependencies {
   getMainWindow: () => BrowserWindow | null;
@@ -22,7 +23,7 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
     console.log("🎯 IPC send-message received:", message);
 
     const agent = deps.getAgent();
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
 
     if (!agent) {
       console.log("❌ Agent not started");
@@ -77,7 +78,7 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
   // Handle take-screenshot
   ipcMain.handle("take-screenshot", async () => {
     const computer = deps.getComputer();
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
 
     if (!computer) {
       throw new Error("Computer not initialized");
@@ -95,7 +96,7 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
 
   // Handle start-agent
   ipcMain.handle("start-agent", async (event, options: any = {}) => {
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
 
     try {
       // Initialize computer
@@ -120,28 +121,29 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
             required: ["app_name"],
           },
         },
-        {
-          type: "function",
-          name: "open_application",
-          description: "Open/launch an application by name.",
-          parameters: {
-            type: "object",
-            properties: {
-              app_name: {
-                type: "string",
-                description: "Name of the application to open",
-              },
-            },
-            additionalProperties: false,
-            required: ["app_name"],
-          },
-        },
-        {
-          type: "function",
-          name: "get_active_application",
-          description: "Get the name of the currently active/focused application.",
-          parameters: {},
-        },
+        // TODO REMOVE FOR NOW, I THINK WE BROKE SOMETHING IN THE SUBPROCESS
+        // {
+        //   type: "function",
+        //   name: "open_application",
+        //   description: "Open/launch an application by name.",
+        //   parameters: {
+        //     type: "object",
+        //     properties: {
+        //       app_name: {
+        //         type: "string",
+        //         description: "Name of the application to open",
+        //       },
+        //     },
+        //     additionalProperties: false,
+        //     required: ["app_name"],
+        //   },
+        // },
+        // {
+        //   type: "function",
+        //   name: "get_active_application",
+        //   description: "Get the name of the currently active/focused application.",
+        //   parameters: {},
+        // },
       ];
 
       const agent = new Agent({
@@ -169,7 +171,7 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
 
   // Handle stop-agent
   ipcMain.handle("stop-agent", async () => {
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
     const agent = deps.getAgent();
 
     console.log("🛑 IPC: stop-agent called");
@@ -201,12 +203,12 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
 
   // Handle window controls
   ipcMain.handle("minimize-window", async () => {
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
     mainWindow?.minimize();
   });
 
   ipcMain.handle("toggle-maximize-window", async () => {
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
       if (mainWindow.isMaximized()) {
         mainWindow.unmaximize();
@@ -217,7 +219,7 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
   });
 
   ipcMain.handle("close-window", async () => {
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
     mainWindow?.close();
   });
 
@@ -234,7 +236,7 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
   });
 
   ipcMain.handle("disable-click-through", async () => {
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
       mainWindow.setIgnoreMouseEvents(false, { forward: true });
     }
@@ -297,9 +299,29 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
     }
   });
 
+  ipcMain.handle("check-screen-recording-permissions", async () => {
+    try {
+      console.log("📡 IPC: check-screen-recording-permissions called");
+
+      const { desktopCapturer } = require("electron");
+      const sources = await desktopCapturer.getSources({
+        types: ["screen"],
+        thumbnailSize: { width: 1, height: 1 }, // Minimal size for permission check
+      });
+
+      const hasPermissions = sources.length > 0;
+      console.log("📡 IPC: Screen recording permissions:", hasPermissions);
+      return hasPermissions;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.warn("📡 IPC: Error checking screen recording permissions:", errorMessage);
+      return false;
+    }
+  });
+
   // Window expansion handlers
   ipcMain.handle("expand-window", async () => {
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
     if (!mainWindow) return;
 
     console.log("📏 Expanding window to full screen");
@@ -319,7 +341,7 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
   });
 
   ipcMain.handle("contract-window", async () => {
-    const mainWindow = deps.getMainWindow();
+    const mainWindow = BrowserWindow.getAllWindows()[0];
     if (!mainWindow) return;
 
     console.log("📏 Contracting window to sidebar");
@@ -347,7 +369,7 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
   ipcMain.handle(
     "register-keyboard-shortcut",
     async (event, accelerator: string, action: string) => {
-      const mainWindow = deps.getMainWindow();
+      const mainWindow = BrowserWindow.getAllWindows()[0];
 
       try {
         const ret = globalShortcut.register(accelerator, () => {
@@ -389,5 +411,35 @@ export function setupIpcHandlers(deps: IpcHandlerDependencies) {
       console.error("🎹 Error unregistering all shortcuts:", error);
       return false;
     }
+  });
+
+  // Window button visibility handlers
+  ipcMain.handle("hide-window-buttons", async () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      mainWindow.setWindowButtonVisibility(false);
+    }
+  });
+
+  ipcMain.handle("show-window-buttons", async () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      mainWindow.setWindowButtonVisibility(true);
+    }
+  });
+
+  // Auth
+  ipcMain.handle("auth:get-token", async () => {
+    const token = await authService.getAccessToken();
+    return token;
+  });
+
+  ipcMain.handle("auth:get-profile", async () => {
+    const profile = await authService.getProfile();
+    return profile;
+  });
+
+  ipcMain.handle("auth:log-out", async () => {
+    await authService.logout();
   });
 }

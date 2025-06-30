@@ -8,6 +8,7 @@ import Sidebar from "./Sidebar";
 import SidebarToggle from "./SidebarToggle";
 import TransparentPane from "./TransparentPane";
 import ScreenLock from "./ScreenLock";
+import { AuthProvider } from "../contexts/AuthContext";
 
 const AppContent: React.FC = () => {
   const {
@@ -21,6 +22,27 @@ const AppContent: React.FC = () => {
   const { isSidebarVisible } = useKeyboard();
   const { enableClickThrough, disableClickThrough } = useScreen();
   const [messages, setMessages] = useState<AgentMessage[]>([]);
+
+  // Check screen recording permissions on component mount
+  useEffect(() => {
+    const checkPermissions = async () => {
+      try {
+        console.log("🔐 Checking screen recording permissions from UI...");
+        const hasPermissions = await window.electronAPI.checkScreenRecordingPermissions();
+        if (hasPermissions) {
+          console.log("✅ Screen recording permissions already granted");
+        } else {
+          console.log(
+            "⚠️ Screen recording permissions not granted - they will be requested when needed"
+          );
+        }
+      } catch (error) {
+        console.warn("Failed to check screen recording permissions:", error);
+      }
+    };
+
+    checkPermissions();
+  }, []);
 
   useEffect(() => {
     const handleAgentMessage = (message: AgentMessage) => {
@@ -157,13 +179,15 @@ const App: React.FC = () => {
   };
 
   return (
-    <ScreenProvider>
-      <KeyboardProvider>
-        <AgentProvider onAgentMessage={handleAgentMessage}>
-          <AppContent />
-        </AgentProvider>
-      </KeyboardProvider>
-    </ScreenProvider>
+    <AuthProvider>
+      <ScreenProvider>
+        <KeyboardProvider>
+          <AgentProvider onAgentMessage={handleAgentMessage}>
+            <AppContent />
+          </AgentProvider>
+        </KeyboardProvider>
+      </ScreenProvider>
+    </AuthProvider>
   );
 };
 

@@ -393,4 +393,22 @@ export class MacOSComputer extends Computer {
       return false;
     }
   }
+
+  async checkScreenRecordingPermissions(): Promise<boolean> {
+    try {
+      log.info("Checking screen recording permissions");
+
+      const sources = await desktopCapturer.getSources({
+        types: ["screen"],
+        thumbnailSize: { width: 1, height: 1 }, // Minimal size for permission check
+      });
+
+      const hasPermissions = sources.length > 0;
+      log.info(`Screen recording permissions: ${hasPermissions}`);
+      return hasPermissions;
+    } catch (error) {
+      log.warn("Screen recording permissions not granted:", error);
+      return false;
+    }
+  }
 }

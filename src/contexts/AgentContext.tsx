@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { AIProvider } from "../ai";
+import { AIProvider } from "../requests/types";
 import { useScreen } from "./ScreenContext";
 import { AgentMessage, ConversationRole } from "../types";
 
