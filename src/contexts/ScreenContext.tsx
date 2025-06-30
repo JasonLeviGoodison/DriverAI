@@ -1,6 +1,7 @@
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useState } from "react";
 
 export interface ScreenContextType {
+  isExpanded: boolean;
   expandScreen: () => Promise<void>;
   contractScreen: () => Promise<void>;
   enableClickThrough: () => Promise<void>;
@@ -22,16 +23,19 @@ interface ScreenProviderProps {
 }
 
 export const ScreenProvider: React.FC<ScreenProviderProps> = ({ children }) => {
-  // Functions that call the electronAPI methods
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const expandScreen = async () => {
     if (window.electronAPI?.expandWindow) {
       await window.electronAPI.expandWindow();
+      setIsExpanded(true);
     }
   };
 
   const contractScreen = async () => {
     if (window.electronAPI?.contractWindow) {
       await window.electronAPI.contractWindow();
+      setIsExpanded(false);
     }
   };
 
@@ -48,6 +52,7 @@ export const ScreenProvider: React.FC<ScreenProviderProps> = ({ children }) => {
   };
 
   const value: ScreenContextType = {
+    isExpanded,
     expandScreen,
     contractScreen,
     enableClickThrough,

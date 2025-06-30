@@ -2,6 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import { contextBridge, ipcRenderer } from "electron";
+import { Profile } from "./requests/types";
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -18,6 +19,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   minimizeWindow: () => ipcRenderer.invoke("minimize-window"),
   toggleMaximizeWindow: () => ipcRenderer.invoke("toggle-maximize-window"),
   closeWindow: () => ipcRenderer.invoke("close-window"),
+  hideWindowButtons: () => ipcRenderer.invoke("hide-window-buttons"),
+  showWindowButtons: () => ipcRenderer.invoke("show-window-buttons"),
 
   // Click-through controls
   enableClickThrough: () => ipcRenderer.invoke("enable-click-through"),
@@ -75,6 +78,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.removeAllListeners("screenshot");
     ipcRenderer.removeAllListeners("keyboard-shortcut");
   },
+
+  // Auth
+  getToken: () => ipcRenderer.invoke("auth:get-token"),
+  getProfile: () => ipcRenderer.invoke("auth:get-profile"),
+  logOut: () => ipcRenderer.invoke("auth:log-out"),
 });
 
 // TypeScript interface for the exposed API
@@ -88,6 +96,8 @@ declare global {
       minimizeWindow: () => Promise<void>;
       toggleMaximizeWindow: () => Promise<void>;
       closeWindow: () => Promise<void>;
+      hideWindowButtons: () => Promise<void>;
+      showWindowButtons: () => Promise<void>;
       enableClickThrough: () => Promise<void>;
       disableClickThrough: () => Promise<void>;
       startScreenLock: () => Promise<boolean>;
@@ -105,6 +115,9 @@ declare global {
       onScreenshot: (callback: (screenshot: string) => void) => void;
       onKeyboardShortcut: (callback: (action: string) => void) => void;
       removeAllListeners: () => void;
+      getToken: () => Promise<string>;
+      getProfile: () => Promise<Profile>;
+      logOut: () => Promise<void>;
     };
   }
 }

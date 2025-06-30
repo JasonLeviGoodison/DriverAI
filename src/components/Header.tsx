@@ -3,11 +3,11 @@ import { Settings, Minus, Square, X } from "lucide-react";
 import { useAgent } from "../contexts/AgentContext";
 import { useScreen } from "../contexts/ScreenContext";
 import { useKeyboard } from "../contexts/KeyboardContext";
-import { AIProvider } from "../ai";
+import { AIProvider } from "../requests/types";
 
 const Header: React.FC = () => {
   const { isAgentRunning, currentProvider, setCurrentProvider } = useAgent();
-  const { enableClickThrough, disableClickThrough } = useScreen();
+  const { enableClickThrough, disableClickThrough, isExpanded } = useScreen();
   const { isSidebarVisible } = useKeyboard();
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -73,13 +73,13 @@ const Header: React.FC = () => {
   return (
     <header className="title-bar" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       {/* Traffic lights area for macOS */}
-      {isMac && <div className="traffic-light-bar" />}
+      {isMac && !isExpanded && <div className="traffic-light-bar" />}
 
       {/* Windows controls area */}
       {!isMac && <div className="windows-bar" />}
 
       {/* macOS account/settings area */}
-      {isMac && <div className="mac-account-bar" />}
+      {isMac && !isExpanded && <div className="mac-account-bar" />}
 
       {/* Settings menu */}
       <div className="settings-menu">
